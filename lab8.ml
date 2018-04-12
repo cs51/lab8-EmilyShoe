@@ -174,8 +174,8 @@ let buzzFake (s : string) : unit =
 Exercise 5: Register these two news organizations as listeners to the
 newswire event.
 ......................................................................*)
-add_listener newswire fakeNewsNetwork ;;
-add_listener newswire buzzFake ;;
+let id1 = add_listener newswire fakeNewsNetwork ;;
+let id2 = add_listener newswire buzzFake ;;
 
 (* .. *)
 
@@ -204,7 +204,8 @@ the publications don't publish right away. *)
 (*......................................................................
 Exercise 7: Remove the newswire listeners that were previously registered.
 ......................................................................*)
-
+remove_listener newswire id1 ;;
+remove_listener newswire id2 ;;
 (* .. *)
 
 (*......................................................................
@@ -212,7 +213,7 @@ Exercise 8: Create a new event called publish to signal that all
 stories should be published. The event should be a unit WEvent.event.
 ......................................................................*)
 
-let publish = fun _ -> failwith "publish not implemented" ;;
+let publish = new_event () ;;
 
 (*......................................................................
 Exercise 9: Write a function receive_report to handle new news
@@ -223,13 +224,15 @@ by registering appropriate listeners, one for each news network,
 waiting for the publish event.
 ......................................................................*)
 
-let receive_report = fun _ -> failwith "report not implemented";;
+let receive_report (s : string) : unit =
+  ignore (add_listener publish (fun () -> fakeNewsNetwork s));
+  ignore (add_listener publish (fun () -> buzzFake s)) ;;
 
 (*......................................................................
 Exercise 10: Register the receieve_report listener to listen for the
 newswire event.
 ......................................................................*)
-
+add_listener newswire receive_report;;
 (* .. *)
 
 (* Here are some new headlines to use for testing this part. *)
@@ -246,6 +249,9 @@ event instead.)
 ......................................................................*)
 
 (* .. *)
+fire_event newswire h4 ;;
+fire_event newswire h5 ;;
+fire_event newswire h6 ;;
 
 print_string "Moved to publication.\n" ;;
 
@@ -254,5 +260,5 @@ Exercise 12: Finally, make sure that firing the publish event prints
 out the headlines. You should see the headlines printed after
 the line above.
 ......................................................................*)
-
+fire_event publish () ;;
 (* .. *)
