@@ -6,7 +6,6 @@
 
 (*
 Objective:
-
 This lab introduces events and listeners, a paradigm that is
 particularly useful in the programming of front-end applications.
 Event programming in the back-end has also grown in popularity
@@ -16,7 +15,6 @@ with the rise of Node.js.
 
 (*====================================================================
                          Events and Listeners
-
 Imagine that you were writing an operating system and wanted to provide
 an application programming interface (API) for programmers to write a
 user interface. Given what you've learned, how would you design this
@@ -25,7 +23,6 @@ an application could call a method in your API to draw a button.
 This has the benefit of allowing you to control the button style
 throughout the whole OS, and the application's developer need
 only call a single method to draw a button in an application.
-
 Once you've added buttons to your API, how would you allow
 client applications to react to, say, a mouse click?
 One way might be to add a function parameter to the button creation
@@ -35,7 +32,6 @@ presses the button. This type of parameter is referred to as a *callback*:
 a function that is passed to another function, which the latter
 then executes at the appropriate time. (Higher-order
 functional programming makes this approach very natural.)
-
 Now imagine a more complex situation: you would like to allow the user
 to interact with buttons in a myriad of ways. Perhaps the user
 could long-click, double-click, right-click, or maybe even use the
@@ -43,23 +39,19 @@ keyboard to activate the button. An application might require
 different behavior in each case; that would mean many individual
 callbacks. Adding parameters for each type of interaction quickly
 becomes untenable.
-
 One solution to this problem is to leverage *events*. Programmers
 using your API write functions that are designed to handle
 various events, like a keyboard press or a right-click, and notify
 the API which functions react to these events by "registering" the
 functions for those events.
-
 JavaScript makes frequent use of this paradigm. For example, you might
 have code that executes a function when
 the "onclick" event is fired. This event is named appropriately:
 it is the one that is fired upon clicking an on-screen object.
-
 In the end, there are several requirements for events to work: we must
 define an event itself (like "onclick"), have listeners for those
 events (like a function that is executed in response to the "onclick"
 event), and provide a mechanism that "fires" the event.
-
 This lab walks through each of these steps to build a simple event
 system. First, we'll define an event interface.  *)
 
@@ -122,7 +114,8 @@ decide how to implement this.
 ......................................................................*)
 
   let add_listener (evt : 'a event) (listener : 'a -> unit) : id =
-    evt := {id = !id_counter; action = listener} :: !evt; new_id ()
+    let i = new_id () in
+    evt := {id = i; action = listener} :: !evt; i
 
 (*......................................................................
 Exercise 2: Write remove_listener, which, given an id and an event,
@@ -131,7 +124,7 @@ one. If there is no listener with that id, do nothing.
 ......................................................................*)
 
   let remove_listener (evt : 'a event) (i : id) : unit =
-    evt := List.filter (fun a -> a.id != i) !evt
+    evt := List.filter (fun x -> x.id <> i) !evt
 
 (*......................................................................
 Exercise 3: Write fire_event, which will execute all event handlers
@@ -139,13 +132,12 @@ listening for the event.
 ......................................................................*)
 
   let fire_event (evt : 'a event) (arg : 'a) : unit =
-   List.iter (fun a -> a.action arg) !evt
+    List.iter (fun x -> x.action arg) !evt
 
 end
 
-(*====================================================================
+(*========== ==========================================================
                A sample application: Newswire headlines
-
 Let's now put this to use by creating a newswire. In this example,
 reporters on the ground can create events that fire when they discover
 a news headline in the field. News outlets subscribe to these events
@@ -174,10 +166,10 @@ let buzzFake (s : string) : unit =
 Exercise 5: Register these two news organizations as listeners to the
 newswire event.
 ......................................................................*)
-let id1 = add_listener newswire fakeNewsNetwork ;;
-let id2 = add_listener newswire buzzFake ;;
 
 (* .. *)
+let fnn = add_listener newswire fakeNewsNetwork;;
+let bf = add_listener newswire buzzFake;;
 
 (* Here are some headlines to play with. *)
 
@@ -204,8 +196,8 @@ the publications don't publish right away. *)
 (*......................................................................
 Exercise 7: Remove the newswire listeners that were previously registered.
 ......................................................................*)
-remove_listener newswire id1 ;;
-remove_listener newswire id2 ;;
+remove_listener newswire fnn ;;
+remove_listener newswire bf ;;
 (* .. *)
 
 (*......................................................................
@@ -224,7 +216,7 @@ by registering appropriate listeners, one for each news network,
 waiting for the publish event.
 ......................................................................*)
 
-let receive_report (s : string) : unit =
+let receive_report s =
   ignore (add_listener publish (fun () -> fakeNewsNetwork s));
   ignore (add_listener publish (fun () -> buzzFake s)) ;;
 
@@ -232,7 +224,7 @@ let receive_report (s : string) : unit =
 Exercise 10: Register the receieve_report listener to listen for the
 newswire event.
 ......................................................................*)
-add_listener newswire receive_report;;
+add_listener newswire receive_report ;;
 (* .. *)
 
 (* Here are some new headlines to use for testing this part. *)
@@ -247,11 +239,10 @@ properly implemented), the newswire event doesn't immediately print
 the news. (They've just queued up a bunch of listeners on the publish
 event instead.)
 ......................................................................*)
-
+fire_event newswire h4;;
+fire_event newswire h5;;
+fire_event newswire h6;;
 (* .. *)
-fire_event newswire h4 ;;
-fire_event newswire h5 ;;
-fire_event newswire h6 ;;
 
 print_string "Moved to publication.\n" ;;
 
@@ -260,5 +251,5 @@ Exercise 12: Finally, make sure that firing the publish event prints
 out the headlines. You should see the headlines printed after
 the line above.
 ......................................................................*)
-fire_event publish () ;;
+fire_event publish ();;
 (* .. *)
